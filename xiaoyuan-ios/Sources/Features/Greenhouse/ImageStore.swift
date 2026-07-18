@@ -92,9 +92,14 @@ enum ImageStore {
 /// 自带一点旧胶卷的暖调(轻微降饱和 + 暖色薄纱)。
 struct StoredImageView: View {
     let path: String
-    var maxPixel: CGFloat? = nil
+    var maxPixel: CGFloat?
 
     @State private var image: UIImage?
+
+    init(path: String, maxPixel: CGFloat? = nil) {
+        self.path = path
+        self.maxPixel = maxPixel
+    }
 
     var body: some View {
         ZStack {

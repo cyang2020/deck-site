@@ -6,6 +6,10 @@ import SwiftData
 struct CardDetailView: View {
     @Bindable var card: PhotoCard
 
+    init(card: PhotoCard) {
+        self.card = card
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 

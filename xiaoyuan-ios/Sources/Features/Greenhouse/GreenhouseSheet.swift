@@ -210,10 +210,16 @@ extension View {
 }
 
 struct GreenhouseButtonStyle: ButtonStyle {
-    var fill = false
-    var small = false
-    var dashed = false
+    var fill: Bool
+    var small: Bool
+    var dashed: Bool
     @Environment(\.isEnabled) private var isEnabled
+
+    init(fill: Bool = false, small: Bool = false, dashed: Bool = false) {
+        self.fill = fill
+        self.small = small
+        self.dashed = dashed
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

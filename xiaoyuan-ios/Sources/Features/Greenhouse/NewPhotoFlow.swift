@@ -7,7 +7,11 @@ import UIKit
 /// 全程可以随时“算了”。
 struct NewPhotoFlow: View {
     /// 夹好(插入成功)后通知外面,花房那边好说一声“嗒——夹好了。”
-    var onHung: () -> Void = {}
+    var onHung: () -> Void
+
+    init(onHung: @escaping () -> Void = {}) {
+        self.onHung = onHung
+    }
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
