@@ -36,6 +36,8 @@
   #world{ position:fixed; inset:0; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
   #world::-webkit-scrollbar{ display:none; }
   #scene{ height:100%; display:block; }
+  [data-time="night"] #scene .spr{ filter:brightness(.62) saturate(.8); }
+  [data-time="dusk"] #scene .spr{ filter:brightness(.88) saturate(.95) sepia(.12); }
 
   .tappable{ cursor:pointer; }
   .tappable:active{ opacity:.88; }
@@ -254,7 +256,7 @@
     <!-- 草地 -->
     <path d="M0,772 Q400,752 900,768 T1800,764 T2600,770 L2600,1000 L0,1000 Z" fill="var(--grass)"/>
     <path d="M0,840 Q500,820 1200,838 T2600,834 L2600,1000 L0,1000 Z" fill="var(--grass-deep)" opacity=".55"/>
-    <g stroke="var(--pine)" stroke-width="2.4" stroke-linecap="round" opacity=".7">
+    <g class="spr" stroke="var(--pine)" stroke-width="2.4" stroke-linecap="round" opacity=".7">
       <path d="M420,790 l0,-12 M428,790 l5,-10 M412,790 l-5,-10" fill="none"/>
       <path d="M1350,800 l0,-12 M1358,800 l5,-10 M1342,800 l-5,-10" fill="none"/>
       <path d="M2380,792 l0,-12 M2388,792 l5,-10 M2372,792 l-5,-10" fill="none"/>
@@ -262,40 +264,24 @@
     </g>
 
     <!-- 后排篱笆 -->
-    <g id="fence"></g>
-    <rect x="150" y="726" width="2290" height="7" rx="3.5" fill="#E9DCC2" stroke="var(--ink)" stroke-width="2"/>
+    <g id="fence" class="spr"></g>
+    <rect class="spr" x="470" y="726" width="1970" height="7" rx="3.5" fill="#E9DCC2" stroke="var(--ink)" stroke-width="2"/>
 
     <!-- 篱笆门 -->
     <g id="gate">
-      <rect x="120" y="640" width="18" height="130" rx="9" fill="#E0CDA9" stroke="var(--ink)" stroke-width="3"/>
-      <rect x="255" y="640" width="18" height="130" rx="9" fill="#E0CDA9" stroke="var(--ink)" stroke-width="3"/>
-      <path d="M129,648 Q196,600 264,648" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
-      <g font-family="Kaiti SC,STKaiti,serif" font-size="26" fill="var(--ink)" text-anchor="middle">
-        <text x="197" y="622" letter-spacing="6">小 园</text>
-      </g>
-      <g id="gateDoor" transform-origin="140 705">
-        <rect x="142" y="672" width="14" height="96" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
-        <rect x="168" y="664" width="14" height="104" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
-        <rect x="194" y="660" width="14" height="108" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
-        <rect x="220" y="664" width="14" height="104" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
-        <rect x="138" y="700" width="102" height="8" rx="4" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.2"/>
-      </g>
+      <image class="spr" href="assets/gate-frame.png" x="75" y="525" width="250" height="250"/>
+      <text id="gateSign" x="200" y="654" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif"
+            font-size="21" letter-spacing="5" fill="#6B4A2E">小园</text>
     </g>
 
     <!-- 邮筒 -->
     <g id="mailbox" class="tappable">
-      <rect x="333" y="668" width="10" height="100" rx="5" fill="#8A6B4C" stroke="var(--ink)" stroke-width="2.6"/>
-      <rect x="300" y="618" width="78" height="52" rx="24" fill="var(--terra)" stroke="var(--ink)" stroke-width="3"/>
-      <rect x="356" y="634" width="16" height="20" rx="4" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.2"/>
-      <g id="mailFlag" transform-origin="306 622">
-        <line x1="306" y1="622" x2="306" y2="596" stroke="var(--ink)" stroke-width="3.4" stroke-linecap="round"/>
-        <path d="M306,596 h20 l-7,8 7,8 h-20 z" fill="#F3C34E" stroke="var(--ink)" stroke-width="2.2"/>
-      </g>
-      <rect x="290" y="590" width="100" height="180" fill="transparent"/>
+      <image class="spr" href="assets/mailbox.png" x="300" y="590" width="123" height="185"/>
+      <rect x="292" y="582" width="140" height="196" fill="transparent"/>
     </g>
 
     <!-- 花坛 -->
-    <g id="bed" class="tappable">
+    <g id="bed" class="tappable spr">
       <path d="M470,742 h330 q14,0 14,14 v22 q0,14 -14,14 h-330 q-14,0 -14,-14 v-22 q0,-14 14,-14 z"
             fill="var(--soil)" stroke="var(--ink)" stroke-width="3"/>
       <path d="M486,760 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0" fill="none" stroke="var(--soil-deep)" stroke-width="4" stroke-linecap="round" opacity=".8"/>
@@ -310,63 +296,37 @@
 
     <!-- 花房 -->
     <g id="greenhouse" class="tappable">
-      <path d="M880,566 L1070,470 L1260,566 Z" fill="var(--glass)" opacity=".85" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
-      <rect x="892" y="566" width="356" height="202" fill="var(--glass)" opacity=".72" stroke="var(--ink)" stroke-width="3"/>
-      <g id="ghGlow" class="hidden"><rect x="894" y="568" width="352" height="198" fill="#FFD98A" opacity=".2"/></g>
-      <g stroke="var(--ink)" stroke-width="1.8" opacity=".5">
-        <line x1="963" y1="566" x2="963" y2="768"/><line x1="1034" y1="566" x2="1034" y2="768"/>
-        <line x1="1105" y1="566" x2="1105" y2="768"/><line x1="1176" y1="566" x2="1176" y2="768"/>
-        <line x1="892" y1="633" x2="1248" y2="633"/><line x1="892" y1="700" x2="1248" y2="700"/>
-        <line x1="1070" y1="470" x2="1070" y2="566"/><line x1="975" y1="518" x2="1165" y2="518"/>
-      </g>
-      <rect x="1046" y="640" width="52" height="128" rx="6" fill="#EAD9BC" stroke="var(--ink)" stroke-width="3"/>
-      <circle cx="1088" cy="706" r="3.4" fill="var(--ink)"/>
-      <g transform="translate(1070,452)">
-        <rect x="-44" y="-26" width="88" height="34" rx="9" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.6"/>
-        <text x="0" y="-1" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="19" fill="var(--ink)" letter-spacing="3">花房</text>
-      </g>
-      <use href="#wildflower" transform="translate(1226,766)"/>
+      <image id="ghImg" class="spr" href="assets/greenhouse.png" x="865" y="495" width="420" height="280"/>
+      <g id="ghGlow" class="hidden"><rect x="885" y="520" width="380" height="240" rx="24" fill="#FFD98A" opacity=".16"/></g>
+      <rect x="865" y="495" width="420" height="280" fill="transparent"/>
     </g>
 
     <!-- 大树与秋千 -->
     <g id="treeG">
-      <path d="M1568,772 C1560,700 1572,650 1560,560 C1600,570 1610,640 1604,700 C1600,740 1596,758 1596,772 Z"
-            fill="#8A6B4C" stroke="var(--ink)" stroke-width="3"/>
-      <g fill="var(--grass-deep)" stroke="var(--ink)" stroke-width="3">
-        <ellipse cx="1500" cy="520" rx="95" ry="72"/>
-        <ellipse cx="1622" cy="488" rx="110" ry="82"/>
-        <ellipse cx="1560" cy="430" rx="88" ry="66"/>
-        <ellipse cx="1700" cy="540" rx="72" ry="55"/>
-      </g>
-      <path d="M1470,540 q30,18 60,10 M1600,470 q26,16 56,8" stroke="var(--ink)" stroke-width="2.2" fill="none" opacity=".45"/>
-      <g id="swing" class="tappable">
-        <g id="swingG" transform-origin="1690 560">
-          <line x1="1664" y1="560" x2="1664" y2="700" stroke="var(--ink)" stroke-width="2.6"/>
-          <line x1="1716" y1="560" x2="1716" y2="700" stroke="var(--ink)" stroke-width="2.6"/>
-          <rect x="1648" y="698" width="84" height="12" rx="6" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.6"/>
+      <image class="spr" href="assets/tree.png" x="1420" y="258" width="347" height="520"/>
+      <g id="swing" class="tappable spr">
+        <g id="swingG" transform-origin="1692 552">
+          <line x1="1668" y1="552" x2="1668" y2="692" stroke="#8A6B4C" stroke-width="3.4" stroke-linecap="round"/>
+          <line x1="1716" y1="552" x2="1716" y2="692" stroke="#8A6B4C" stroke-width="3.4" stroke-linecap="round"/>
+          <rect x="1650" y="690" width="84" height="13" rx="6.5" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.6"/>
         </g>
-        <rect x="1630" y="560" width="120" height="170" fill="transparent"/>
+        <rect x="1636" y="552" width="116" height="168" fill="transparent"/>
       </g>
     </g>
 
     <!-- 小屋 + 花田 -->
     <g id="cottage" class="tappable">
-      <rect x="1910" y="580" width="300" height="190" rx="10" fill="#FBF0DA" stroke="var(--ink)" stroke-width="3"/>
-      <path d="M1886,588 L2060,462 L2234,588 Z" fill="var(--terra)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
-      <rect x="2150" y="470" width="26" height="60" rx="5" fill="#C97C5E" stroke="var(--ink)" stroke-width="2.6"/>
-      <rect x="1946" y="642" width="64" height="128" rx="8" fill="#8A6B4C" stroke="var(--ink)" stroke-width="3"/>
-      <circle cx="1998" cy="708" r="3.6" fill="#FFF3D9"/>
-      <circle id="winGlow" cx="2120" cy="650" r="30" fill="#FFD98A" opacity="0"/>
-      <circle cx="2120" cy="650" r="34" fill="#DFF0EA" fill-opacity=".55" stroke="var(--ink)" stroke-width="3"/>
-      <path d="M2086,650 h68 M2120,616 v68" stroke="var(--ink)" stroke-width="2.2" opacity=".6"/>
-      <g id="doorNote" class="hidden" transform="translate(1978,660) rotate(-4)">
+      <image id="ctImg" class="spr" href="assets/cottage.png" x="1885" y="508" width="400" height="267"/>
+      <circle id="winGlow" cx="2131" cy="676" r="26" fill="#FFD98A" opacity="0"/>
+      <rect x="1885" y="508" width="400" height="267" fill="transparent"/>
+      <g id="doorNote" class="hidden" transform="translate(2032,690) rotate(-4)">
         <rect x="-32" y="-22" width="64" height="46" rx="4" fill="#FFF9EA" stroke="var(--ink)" stroke-width="2"/>
         <circle cx="0" cy="-16" r="2.6" fill="var(--terra)"/>
         <text x="1" y="0" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="11" fill="var(--ink)">有人要</text>
         <text x="1" y="15" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="11" fill="var(--ink)">搬进来了</text>
       </g>
     </g>
-    <g id="meadow" opacity=".95">
+    <g id="meadow" class="spr" opacity=".95">
       <use href="#wildflower" transform="translate(2280,760)"/>
       <use href="#wildflower" transform="translate(2320,780) scale(.85)"/>
       <use href="#wildflower" transform="translate(2362,764) scale(1.1)"/>
@@ -374,7 +334,7 @@
     </g>
 
     <!-- 小溪 -->
-    <g id="stream">
+    <g id="stream" class="spr">
       <path d="M2470,748 C2510,800 2500,880 2560,1000 L2600,1000 L2600,720 C2560,724 2520,730 2470,748 Z"
             fill="#BFDCE8" stroke="var(--ink)" stroke-width="3"/>
       <g stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" opacity=".7">
@@ -554,7 +514,7 @@
 
   /* ---------------- 篱笆与开门 ---------------- */
   (function fence(){
-    var g=document.getElementById("fence"), x=290;
+    var g=document.getElementById("fence"), x=490;
     while(x<2440){
       var u=document.createElementNS("http://www.w3.org/2000/svg","use");
       u.setAttribute("href","#picket"); u.setAttribute("x",x); u.setAttribute("y",690); g.appendChild(u);
@@ -563,8 +523,10 @@
   })();
   window.addEventListener("load",function(){
     var door=document.getElementById("gateDoor");
-    door.style.transition="transform 1.4s cubic-bezier(.5,.05,.3,1), opacity 1.4s";
-    setTimeout(function(){ door.style.transform="scaleX(0.14) rotate(-3deg)"; door.style.opacity=".85"; },500);
+    if(door){
+      door.style.transition="transform 1.4s cubic-bezier(.5,.05,.3,1), opacity 1.4s";
+      setTimeout(function(){ door.style.transform="scaleX(0.14) rotate(-3deg)"; door.style.opacity=".85"; },500);
+    }
     var hint=document.getElementById("hint");
     setTimeout(function(){ hint.style.opacity=1; },1800);
     var world=document.getElementById("world");
@@ -627,7 +589,7 @@
       GIFT.forEach(function(g){ S.seeds[g.id]=(S.seeds[g.id]||0)+g.n; });
       save();
       var flag=document.getElementById("mailFlag");
-      flag.style.transition="transform .6s"; flag.style.transform="rotate(78deg)";
+      if(flag){ flag.style.transition="transform .6s"; flag.style.transform="rotate(78deg)"; }
       body.innerHTML =
         '<div class="letter">这里是你的园子。<br>花往哪儿种,都对。<br><br>随信附上今夏的种子:波斯菊三粒、向日葵两粒、牵牛花两粒。'+
         '<div class="from">—— 小园 · '+term(new Date())+'</div></div>';
