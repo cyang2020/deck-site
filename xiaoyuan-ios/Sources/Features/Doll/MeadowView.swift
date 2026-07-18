@@ -8,7 +8,7 @@ import SwiftData
 public struct MeadowView: View {
     public init() {}
 
-    @Query(sort: \Worry.releasedAt) private var allWorries: [Worry]
+    @Query(sort: \Worry.createdAt) private var allWorries: [Worry]
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Worry?
 

@@ -103,7 +103,7 @@ struct GentleAskCard: View {
     /// 卡片随时间褪色:第 7 天起从 0.95 淡到 30 天后的 0.4
     private var fadedOpacity: Double {
         let days = Date.now.timeIntervalSince(worry.createdAt) / 86_400
-        return max(0.4, 0.95 - (days - 7) * 0.024)
+        return min(0.95, max(0.4, 0.95 - (days - 7) * 0.024))
     }
 
     var body: some View {

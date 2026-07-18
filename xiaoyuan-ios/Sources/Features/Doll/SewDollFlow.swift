@@ -11,6 +11,7 @@ struct SewDollFlow: View {
     @State private var fabricIndex = 0
     @State private var expressionIndex = 0
     @State private var name = ""
+    @State private var sewn = false   // 防连点重复写入
 
     @FocusState private var nameFocused: Bool
 
@@ -169,6 +170,8 @@ struct SewDollFlow: View {
                 .font(Theme.kai(19))
                 .foregroundStyle(Theme.ink)
             Button {
+                guard !sewn else { return }
+                sewn = true
                 nameFocused = false
                 context.insert(DollProfile(name: finalName, fabric: fabricIndex, expression: expressionIndex))
                 // 写入后,小屋那边的 @Query 自己会换成房间
