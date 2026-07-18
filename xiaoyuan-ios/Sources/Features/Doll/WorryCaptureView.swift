@@ -49,10 +49,12 @@ final class HandRecorder: ObservableObject {
     private var recorder: AVAudioRecorder?
     private var fileRelativePath: String?
     private var startedAt: Date?
+    private var holdWanted = false   // 防止权限弹窗回来时手已松开
 
     /// 按下:要权限、开录。权限被拒 → permissionDenied,由界面温柔退回打字。
     func beginHold() async {
         guard !isRecording else { return }
+        holdWanted = true
         let granted: Bool
         switch AVAudioApplication.shared.recordPermission {
         case .granted:      granted = true
@@ -62,8 +64,11 @@ final class HandRecorder: ObservableObject {
         }
         guard granted else {
             permissionDenied = true
+            holdWanted = false
             return
         }
+        // 弹权限框时手指早就抬起来了;没人按着就不开始录
+        guard holdWanted else { return }
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -89,6 +94,7 @@ final class HandRecorder: ObservableObject {
     /// 松手:停下。太短的一下就当没说,悄悄扔掉,不评价。
     /// 返回可入库的相对路径(nil = 这次没有留下东西)。
     func endHold() -> String? {
+        holdWanted = false
         guard isRecording, let r = recorder else { return nil }
         let duration = Date.now.timeIntervalSince(startedAt ?? .now)
         r.stop()
@@ -235,7 +241,7 @@ struct WorryCaptureView: View {
                 if pressing {
                     reaction = .listening
                     Task { await recorder.beginHold() }
-                } else if recorder.isRecording {
+                } else {
                     if let path = recorder.endHold() {
                         // 新的一段替掉刚才那段(只留最后一次松手的)
                         if let old = pendingAudioPath {
@@ -266,7 +272,6 @@ struct WorryCaptureView: View {
         }
         .buttonStyle(.plain)
         .disabled(recorder.isRecording)
-
     }
 
     private var saveButton: some View {
