@@ -192,18 +192,17 @@ struct GardenSceneView: View {
                     .font(Theme.kai(17 * k))
                     .foregroundStyle(Theme.ink))
                 .placed(792, 686, 58, 30, k: k)
-            ForEach(plants) { plant in
-                let slot = min(max(plant.slot, 0), L.plantSlots.count - 1)
-                PlantSpriteView(plant: plant)
-                    .frame(width: 64 * k, height: 96 * k, alignment: .bottom)
-                    .allowsHitTesting(false)
-                    .position(x: L.plantSlots[slot] * k, y: 708 * k)   // 底边落在土上(y 756)
-            }
+            // 空处点花坛开抽屉;植物自己会接住点它的手指(展签在 PlantSpriteView 里)
             Color.clear
                 .frame(width: 400 * k, height: 156 * k)
                 .contentShape(Rectangle())
                 .onTapGesture { onOpen(.flowerbed) }
                 .position(x: 656 * k, y: 718 * k)
+            ForEach(plants) { plant in
+                let slot = min(max(plant.slot, 0), L.plantSlots.count - 1)
+                PlantSpriteView(plant: plant, height: 84 * k)
+                    .position(x: L.plantSlots[slot] * k, y: (756 - 42) * k)   // 底边落在土上(y 756)
+            }
 
             // 花房(夜里换成亮灯那张)
             nightSwappedSprite(day: "greenhouse", nightName: "greenhouse-night",
