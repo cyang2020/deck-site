@@ -37,7 +37,9 @@
   #world::-webkit-scrollbar{ display:none; }
   #scene{ height:100%; display:block; }
   [data-time="night"] #scene .spr{ filter:brightness(.62) saturate(.8); }
+  [data-time="night"] #scene .spr.nightlit{ filter:brightness(.88) saturate(.95); }
   [data-time="dusk"] #scene .spr{ filter:brightness(.88) saturate(.95) sepia(.12); }
+  .pack img{ width:52px; height:52px; object-fit:contain; }
 
   .tappable{ cursor:pointer; }
   .tappable:active{ opacity:.88; }
@@ -178,19 +180,18 @@
 
 <div id="skyLayer">
   <svg id="skySvg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMax slice" width="100%" height="100%">
-    <g id="sunG"><circle cx="520" cy="170" r="52" fill="var(--sun)" opacity=".95"/>
-      <circle cx="520" cy="170" r="70" fill="var(--sun)" opacity=".25"/></g>
+    <g id="sunG"><image href="assets/sun.png" x="435" y="85" width="170" height="170"/></g>
     <g id="moonG" class="hidden">
-      <circle cx="540" cy="160" r="44" fill="#F6E7B2"/><circle cx="524" cy="150" r="40" fill="var(--sky-hi)"/>
+      <image href="assets/moon.png" x="462" y="82" width="156" height="156"/>
       <g fill="#F2E9D8"><circle cx="420" cy="120" r="2.2"/><circle cx="500" cy="260" r="1.6"/><circle cx="680" cy="90" r="2"/>
         <circle cx="760" cy="200" r="1.7"/><circle cx="640" cy="300" r="1.5"/><circle cx="440" cy="330" r="1.8"/>
         <circle cx="720" cy="380" r="1.4"/><circle cx="580" cy="60" r="1.8"/></g>
     </g>
-    <g class="cloud" id="cloud1" opacity=".9">
-      <g fill="#FFFDF6"><ellipse cx="0" cy="0" rx="58" ry="24"/><ellipse cx="42" cy="-12" rx="40" ry="20"/><ellipse cx="-40" cy="-8" rx="34" ry="17"/></g>
+    <g class="cloud" id="cloud1" opacity=".92">
+      <image href="assets/cloud-a.png" x="-75" y="-50" width="150" height="150" transform="translate(0,-28)"/>
     </g>
-    <g class="cloud" id="cloud2" opacity=".75">
-      <g fill="#FFFDF6"><ellipse cx="0" cy="0" rx="58" ry="24"/><ellipse cx="42" cy="-12" rx="40" ry="20"/><ellipse cx="-40" cy="-8" rx="34" ry="17"/></g>
+    <g class="cloud" id="cloud2" opacity=".8">
+      <image href="assets/cloud-b.png" x="-70" y="-46" width="140" height="140" transform="translate(0,-26)"/>
     </g>
   </svg>
 </div>
@@ -208,7 +209,7 @@
 <div id="world">
   <svg id="scene" viewBox="0 0 2600 1000" preserveAspectRatio="xMinYMax meet">
     <defs>
-      <g id="picket"><rect x="0" y="0" width="12" height="66" rx="6" fill="#E9DCC2" stroke="var(--ink)" stroke-width="2.5"/></g>
+      <g id="picket"><image href="assets/picket.png" x="0" y="0" width="46" height="69"/></g>
       <g id="flw-cosmos">
         <g stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round">
           <line x1="0" y1="0" x2="0" y2="-34"/><path d="M0,-16 q-12,-4 -16,-12" fill="none"/>
@@ -269,6 +270,9 @@
 
     <!-- 篱笆门 -->
     <g id="gate">
+      <g id="gateDoor" transform-origin="152 655">
+        <image class="spr" href="assets/gate-door.png" x="152" y="588" width="88" height="132"/>
+      </g>
       <image class="spr" href="assets/gate-frame.png" x="75" y="525" width="250" height="250"/>
       <text id="gateSign" x="200" y="654" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif"
             font-size="21" letter-spacing="5" fill="#6B4A2E">小园</text>
@@ -277,14 +281,13 @@
     <!-- 邮筒 -->
     <g id="mailbox" class="tappable">
       <image class="spr" href="assets/mailbox.png" x="300" y="590" width="123" height="185"/>
-      <rect x="292" y="582" width="140" height="196" fill="transparent"/>
+      <image id="mailFlagImg" class="spr hidden" href="assets/mailbox-flag.png" x="377" y="574" width="56" height="56"/>
+      <rect x="292" y="562" width="152" height="216" fill="transparent"/>
     </g>
 
     <!-- 花坛 -->
     <g id="bed" class="tappable spr">
-      <path d="M470,742 h330 q14,0 14,14 v22 q0,14 -14,14 h-330 q-14,0 -14,-14 v-22 q0,-14 14,-14 z"
-            fill="var(--soil)" stroke="var(--ink)" stroke-width="3"/>
-      <path d="M486,760 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0" fill="none" stroke="var(--soil-deep)" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+      <image href="assets/flowerbed.png" x="448" y="560" width="384" height="256"/>
       <g transform="translate(806,700)">
         <line x1="14" y1="8" x2="14" y2="52" stroke="var(--ink)" stroke-width="3"/>
         <rect x="-14" y="-14" width="58" height="30" rx="7" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.6"/>
@@ -297,7 +300,6 @@
     <!-- 花房 -->
     <g id="greenhouse" class="tappable">
       <image id="ghImg" class="spr" href="assets/greenhouse.png" x="865" y="495" width="420" height="280"/>
-      <g id="ghGlow" class="hidden"><rect x="885" y="520" width="380" height="240" rx="24" fill="#FFD98A" opacity=".16"/></g>
       <rect x="865" y="495" width="420" height="280" fill="transparent"/>
     </g>
 
@@ -305,19 +307,16 @@
     <g id="treeG">
       <image class="spr" href="assets/tree.png" x="1420" y="258" width="347" height="520"/>
       <g id="swing" class="tappable spr">
-        <g id="swingG" transform-origin="1692 552">
-          <line x1="1668" y1="552" x2="1668" y2="692" stroke="#8A6B4C" stroke-width="3.4" stroke-linecap="round"/>
-          <line x1="1716" y1="552" x2="1716" y2="692" stroke="#8A6B4C" stroke-width="3.4" stroke-linecap="round"/>
-          <rect x="1650" y="690" width="84" height="13" rx="6.5" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.6"/>
+        <g id="swingG" transform-origin="1692 550">
+          <image href="assets/swing.png" x="1645" y="550" width="94" height="141"/>
         </g>
-        <rect x="1636" y="552" width="116" height="168" fill="transparent"/>
+        <rect x="1636" y="550" width="116" height="170" fill="transparent"/>
       </g>
     </g>
 
     <!-- 小屋 + 花田 -->
     <g id="cottage" class="tappable">
       <image id="ctImg" class="spr" href="assets/cottage.png" x="1885" y="508" width="400" height="267"/>
-      <circle id="winGlow" cx="2131" cy="676" r="26" fill="#FFD98A" opacity="0"/>
       <rect x="1885" y="508" width="400" height="267" fill="transparent"/>
       <g id="doorNote" class="hidden" transform="translate(2032,690) rotate(-4)">
         <rect x="-32" y="-22" width="64" height="46" rx="4" fill="#FFF9EA" stroke="var(--ink)" stroke-width="2"/>
@@ -335,14 +334,7 @@
 
     <!-- 小溪 -->
     <g id="stream" class="spr">
-      <path d="M2470,748 C2510,800 2500,880 2560,1000 L2600,1000 L2600,720 C2560,724 2520,730 2470,748 Z"
-            fill="#BFDCE8" stroke="var(--ink)" stroke-width="3"/>
-      <g stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" opacity=".7">
-        <path d="M2520,790 q12,6 24,0" fill="none"/><path d="M2536,850 q12,6 24,0" fill="none"/>
-        <path d="M2548,920 q12,6 24,0" fill="none"/>
-      </g>
-      <ellipse cx="2472" cy="768" rx="16" ry="10" fill="#D8CBB5" stroke="var(--ink)" stroke-width="2.4"/>
-      <ellipse cx="2500" cy="742" rx="12" ry="8" fill="#CBBBA2" stroke="var(--ink)" stroke-width="2.4"/>
+      <image href="assets/stream.png" x="2400" y="688" width="205" height="308"/>
     </g>
 
     <g id="fireflies" class="hidden">
@@ -461,6 +453,8 @@
   "use strict";
   var DAY = 86400000;
   var LS = "xiaoyuan.v01";
+  /* 单文件构建时素材被内联进 window.__ASSETS;仓库版直接走相对路径 */
+  function asset(n){ return (window.__ASSETS && window.__ASSETS[n]) ? window.__ASSETS[n] : "assets/"+n+".png"; }
 
   /* ---------------- 状态 ---------------- */
   var S = load();
@@ -508,17 +502,20 @@
     document.getElementById("moonG").classList.toggle("hidden",!night);
     document.getElementById("sunG").classList.toggle("hidden",night);
     document.getElementById("fireflies").classList.toggle("hidden",!night);
-    document.getElementById("winGlow").setAttribute("opacity", night?".8":"0");
-    document.getElementById("ghGlow").classList.toggle("hidden",!night);
+    var gh=document.getElementById("ghImg"), ct=document.getElementById("ctImg");
+    if(gh){ gh.setAttribute("href", asset(night?"greenhouse-night":"greenhouse"));
+            gh.classList.toggle("nightlit",night); }
+    if(ct){ ct.setAttribute("href", asset(night?"cottage-night":"cottage"));
+            ct.classList.toggle("nightlit",night); }
   }
 
   /* ---------------- 篱笆与开门 ---------------- */
   (function fence(){
     var g=document.getElementById("fence"), x=490;
-    while(x<2440){
+    while(x<2400){
       var u=document.createElementNS("http://www.w3.org/2000/svg","use");
-      u.setAttribute("href","#picket"); u.setAttribute("x",x); u.setAttribute("y",690); g.appendChild(u);
-      x+=44;
+      u.setAttribute("href","#picket"); u.setAttribute("x",x); u.setAttribute("y",688); g.appendChild(u);
+      x+=58;
     }
   })();
   window.addEventListener("load",function(){
@@ -582,14 +579,17 @@
   /* ---------------- 邮筒 ---------------- */
   var GIFT=[ {id:"cosmos",n:3}, {id:"sun",n:2}, {id:"glory",n:2} ];
   var FLW={ cosmos:{name:"波斯菊",href:"#flw-cosmos"}, sun:{name:"向日葵",href:"#flw-sun"}, glory:{name:"牵牛花",href:"#flw-glory"} };
+  var BLOOM={ cosmos:"flw-cosmos", sun:"flw-sunflower", glory:"flw-glory" };
+  var SEEDPK={ cosmos:"seed-cosmos", sun:"seed-sunflower", glory:"seed-glory" };
   document.getElementById("mailbox").addEventListener("click",function(){
     var body=document.getElementById("mailBody");
     if(!S.mailOpened){
       S.mailOpened=true;
       GIFT.forEach(function(g){ S.seeds[g.id]=(S.seeds[g.id]||0)+g.n; });
       save();
-      var flag=document.getElementById("mailFlag");
-      if(flag){ flag.style.transition="transform .6s"; flag.style.transform="rotate(78deg)"; }
+      var flag=document.getElementById("mailFlagImg");
+      if(flag){ flag.style.transition="opacity .6s"; flag.style.opacity="0";
+        setTimeout(function(){ flag.classList.add("hidden"); },700); }
       body.innerHTML =
         '<div class="letter">这里是你的园子。<br>花往哪儿种,都对。<br><br>随信附上今夏的种子:波斯菊三粒、向日葵两粒、牵牛花两粒。'+
         '<div class="from">—— 小园 · '+term(new Date())+'</div></div>';
@@ -616,7 +616,7 @@
       var n=S.seeds[id]||0; if(n<=0) return; any=true;
       var d=document.createElement("div");
       d.className="pack"+(pick.seed===id?" sel":"");
-      d.innerHTML='<svg viewBox="-30 -60 60 62"><use href="'+FLW[id].href+'" transform="scale(.9)"/></svg>'+
+      d.innerHTML='<img src="'+asset(SEEDPK[id])+'" alt="">'+
         '<div class="nm">'+FLW[id].name+'</div><div class="ct">还有 '+n+' 粒</div>';
       d.addEventListener("click",function(){ pick.seed=id; renderPacks(); });
       row.appendChild(d);
@@ -657,11 +657,12 @@
     var g=document.getElementById("plants"); g.innerHTML="";
     S.plants.forEach(function(p){
       var st=stage(p);
-      var href = st===0 ? "#sprout" : st===1 ? "#bud" : FLW[p.type].href;
+      var img = st===0 ? "sprout" : st===1 ? "bud" : BLOOM[p.type];
       var u=document.createElementNS("http://www.w3.org/2000/svg","g");
-      u.setAttribute("transform","translate("+SLOTS[p.slot]+",756)");
-      u.setAttribute("class","tappable");
-      u.innerHTML='<use href="'+href+'"/><rect x="-20" y="-70" width="40" height="80" fill="transparent"/>';
+      u.setAttribute("transform","translate("+SLOTS[p.slot]+",728)");
+      u.setAttribute("class","tappable spr");
+      u.innerHTML='<image href="'+asset(img)+'" x="-42" y="-86" width="84" height="84"/>'+
+        '<rect x="-26" y="-86" width="52" height="92" fill="transparent"/>';
       u.addEventListener("click",function(ev){
         ev.stopPropagation();
         var moodName="";
@@ -838,6 +839,7 @@
 
   /* ---------------- 启动 ---------------- */
   refreshChip(); applyTime(); renderPlants();
+  if(!S.mailOpened){ var fi=document.getElementById("mailFlagImg"); if(fi) fi.classList.remove("hidden"); }
   setInterval(applyTime, 60000); setInterval(refreshChip, 60000);
 })();
 </script>
