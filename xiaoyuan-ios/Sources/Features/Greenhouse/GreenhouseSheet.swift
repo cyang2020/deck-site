@@ -24,7 +24,7 @@ public struct GreenhouseSheet: View {
             .scrollIndicators(.hidden)
             bottomBar
         }
-        .background(Theme.paper.ignoresSafeArea())
+        .background(Theme.paper)
         .overlay(alignment: .top) { GreenhouseToast(text: toastText) }
         .sensoryFeedback(.impact(weight: .light), trigger: toastText) { _, new in new != nil }
         .task(id: toastText) { await autoHideToast() }
@@ -77,7 +77,7 @@ public struct GreenhouseSheet: View {
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 18)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.paperWarm))
+        .background(Theme.paperWarm, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var emptyWall: some View {
@@ -138,12 +138,12 @@ private struct WireRowView: View {
             WireView()
                 .padding(.horizontal, 2)
             HStack(alignment: .top, spacing: 12) {
-                ForEach(Array(cards.enumerated()), id: \.element.id) { pair in
-                    Button { onTap(pair.element) } label: {
-                        HungCardView(card: pair.element)
+                ForEach(cards.indices, id: \.self) { i in
+                    Button { onTap(cards[i]) } label: {
+                        HungCardView(card: cards[i])
                     }
                     .buttonStyle(.plain)
-                    .rotationEffect(.degrees(Double((firstIndex + pair.offset) % 3 - 1) * 2),
+                    .rotationEffect(.degrees(Double((firstIndex + i) % 3 - 1) * 2),
                                     anchor: .top)
                 }
             }
@@ -200,12 +200,12 @@ extension View {
             .foregroundStyle(fill ? Theme.cream : Theme.ink)
             .padding(.horizontal, small ? 16 : 22)
             .padding(.vertical, small ? 7 : 10)
-            .background(Capsule().fill(fill ? Theme.ink : GreenhousePalette.polaroidPaper))
-            .overlay(
+            .background(fill ? Theme.ink : GreenhousePalette.polaroidPaper, in: Capsule())
+            .overlay {
                 Capsule().strokeBorder(Theme.ink.opacity(fill ? 0 : 1),
                                        style: StrokeStyle(lineWidth: small ? 1.5 : 2,
                                                           dash: dashed ? [5, 4] : []))
-            )
+            }
     }
 }
 
@@ -330,9 +330,11 @@ struct PaperCardFace<Photo: View>: View {
             }
             .padding(side * 0.07)
             .padding(.bottom, side * 0.09)
-            .background(RoundedRectangle(cornerRadius: 3).fill(GreenhousePalette.polaroidPaper))
-            .overlay(RoundedRectangle(cornerRadius: 3)
-                .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1))
+            .background(GreenhousePalette.polaroidPaper, in: RoundedRectangle(cornerRadius: 3))
+            .overlay {
+                RoundedRectangle(cornerRadius: 3)
+                    .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1)
+            }
             .shadow(color: Theme.ink.opacity(0.18), radius: 4, y: 3)
         case .film:
             VStack(spacing: 3) {
@@ -342,7 +344,7 @@ struct PaperCardFace<Photo: View>: View {
             }
             .padding(.vertical, 4)
             .padding(.horizontal, side * 0.06)
-            .background(RoundedRectangle(cornerRadius: 3).fill(GreenhousePalette.filmDark))
+            .background(GreenhousePalette.filmDark, in: RoundedRectangle(cornerRadius: 3))
             .shadow(color: .black.opacity(0.3), radius: 4, y: 3)
         }
     }
@@ -366,7 +368,7 @@ struct GreenhouseToast: View {
                     .foregroundStyle(Theme.cream)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 9)
-                    .background(Capsule().fill(Theme.ink))
+                    .background(Theme.ink, in: Capsule())
                     .padding(.top, 12)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }

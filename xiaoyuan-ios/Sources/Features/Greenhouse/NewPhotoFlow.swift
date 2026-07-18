@@ -59,7 +59,7 @@ struct NewPhotoFlow: View {
             .padding(20)
         }
         .scrollIndicators(.hidden)
-        .background(Theme.paper.ignoresSafeArea())
+        .background(Theme.paper)
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(Theme.cornerSheet)
         .presentationBackground(Theme.paper)

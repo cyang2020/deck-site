@@ -120,10 +120,17 @@ struct GardenSceneView: View {
         .allowsHitTesting(false)
     }
 
-    @ViewBuilder
     private func sprites(k: CGFloat, palette: ScenePalette) -> some View {
-        let night = ambience.phase == .night
         ZStack {
+            fenceAndGate(k: k, palette: palette)
+            westSide(k: k)
+            eastSide(k: k)
+        }
+    }
+
+    /// 草簇、后排篱笆与篱笆门
+    private func fenceAndGate(k: CGFloat, palette: ScenePalette) -> some View {
+        Group {
             // 草叶小簇
             TuftShape(bases: [(420, 790), (1350, 800), (2380, 792), (840, 806)])
                 .stroke(palette.pine.opacity(0.7),
@@ -159,7 +166,12 @@ struct GardenSceneView: View {
                 .tracking(5 * k)
                 .foregroundStyle(Color(hex: 0x6B4A2E))
                 .position(x: 198 * k, y: 646 * k)
+        }
+    }
 
+    /// 园子西侧:邮筒、花坛(含种下的植物)、花房
+    private func westSide(k: CGFloat) -> some View {
+        Group {
             // 邮筒
             tappableSprite("mailbox", 300, 590, 123, 185, k: k) { onOpen(.mailbox) }
 
@@ -194,9 +206,15 @@ struct GardenSceneView: View {
                 .position(x: 656 * k, y: 718 * k)
 
             // 花房(夜里换成亮灯那张)
-            nightSwappedSprite(day: "greenhouse", nightName: "greenhouse-night", night: night,
+            nightSwappedSprite(day: "greenhouse", nightName: "greenhouse-night",
+                               night: ambience.phase == .night,
                                865, 495, 420, 280, k: k) { onOpen(.greenhouse) }
+        }
+    }
 
+    /// 园子东侧:大树与秋千、小屋、野花地、小溪
+    private func eastSide(k: CGFloat) -> some View {
+        Group {
             // 大树与秋千(点一下,轻轻荡起来;再点一下停)
             Image("tree")
                 .resizable()
@@ -216,7 +234,8 @@ struct GardenSceneView: View {
                 .position(x: 1692 * k, y: 631 * k)
 
             // 小屋(夜里圆窗亮灯)
-            nightSwappedSprite(day: "cottage", nightName: "cottage-night", night: night,
+            nightSwappedSprite(day: "cottage", nightName: "cottage-night",
+                               night: ambience.phase == .night,
                                1885, 508, 400, 267, k: k) { onOpen(.dollhouse) }
 
             // 野花地

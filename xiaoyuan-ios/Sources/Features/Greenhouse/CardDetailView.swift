@@ -35,7 +35,7 @@ struct CardDetailView: View {
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
-        .background(Theme.paper.ignoresSafeArea())
+        .background(Theme.paper)
         .overlay(alignment: .top) { GreenhouseToast(text: toastText) }
         .sensoryFeedback(.impact(weight: .light), trigger: card.sealed)
         .task(id: toastText) { await autoHideToast() }
@@ -89,9 +89,11 @@ struct CardDetailView: View {
         }
         .padding(12)
         .padding(.bottom, 16)
-        .background(RoundedRectangle(cornerRadius: 4).fill(GreenhousePalette.polaroidPaper))
-        .overlay(RoundedRectangle(cornerRadius: 4)
-            .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1))
+        .background(GreenhousePalette.polaroidPaper, in: RoundedRectangle(cornerRadius: 4))
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1)
+        }
         .overlay(alignment: .bottomTrailing) {
             sealOverlay.padding(.trailing, 8).padding(.bottom, 44)
         }
@@ -109,7 +111,7 @@ struct CardDetailView: View {
                 .padding(.horizontal, 4)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 4).fill(GreenhousePalette.filmDark))
+        .background(GreenhousePalette.filmDark, in: RoundedRectangle(cornerRadius: 4))
         .overlay(alignment: .bottomTrailing) {
             sealOverlay.padding(.trailing, 8).padding(.bottom, 52)
         }
@@ -184,9 +186,11 @@ struct CardDetailView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 4).fill(GreenhousePalette.backPaper))
-        .overlay(RoundedRectangle(cornerRadius: 4)
-            .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1))
+        .background(GreenhousePalette.backPaper, in: RoundedRectangle(cornerRadius: 4))
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(GreenhousePalette.cardEdge, lineWidth: 1)
+        }
     }
 
     /// 背面的话:默认蒙 6pt 毛玻璃,按住才显形
