@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小园</title>
+<style>
+  :root{
+    --ink:#5A4232; --ink-soft:#7A6350; --paper:#FFFDF6; --paper-warm:#FFF7E8;
+    --grass:#9CC08A; --grass-deep:#6FA06B; --pine:#4F7D5B;
+    --terra:#D98A6A; --soil:#C29A6E; --soil-deep:#A97F55;
+    --sky-hi:#C2E2DD; --sky-lo:#FFF3D9; --sun:#FFD98A;
+    --hill-far:#CBDDB4; --hill-near:#AECB99;
+    --glass:#DFF0EA; --frame:#EAD9BC;
+    --kai:"Kaiti SC","STKaiti","KaiTi","AR PL UKai CN",serif;
+    --sans:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;
+  }
+  [data-time="dusk"]{ --sky-hi:#E7B8A2; --sky-lo:#FBE3C0; --hill-far:#C4B9A4; --hill-near:#9DB088; }
+  [data-time="night"]{
+    --sky-hi:#2E3550; --sky-lo:#4A4E73; --hill-far:#3E4A55; --hill-near:#37544C;
+    --grass:#5E7D62; --grass-deep:#48664F; --pine:#3A5A48; --soil:#8A7052; --soil-deep:#6E5740;
+    --glass:#9FB4B9; --frame:#B9A98C; --terra:#B06F58; --sun:#F6E7B2;
+  }
+  [data-time="dawn"]{ --sky-hi:#F3CDB6; --sky-lo:#FDEED2; }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ margin:0; overflow:hidden; font-family:var(--sans); color:var(--ink);
+        background:linear-gradient(var(--sky-hi),var(--sky-lo)); transition:background 2s; }
+
+  /* ---------- 层:天空 / 远山 / 园景 ---------- */
+  #skyLayer,#hillLayer{ position:fixed; inset:0; pointer-events:none; }
+  #hillLayer svg,#skyLayer svg{ position:absolute; bottom:0; left:0; height:100%; }
+  #world{ position:fixed; inset:0; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+  #world::-webkit-scrollbar{ display:none; }
+  #scene{ height:100%; display:block; }
+
+  .tappable{ cursor:pointer; }
+  .tappable:active{ opacity:.88; }
+
+  /* ---------- 顶部日期章 ---------- */
+  #dateChip{
+    position:fixed; top:calc(12px + env(safe-area-inset-top)); left:14px; z-index:20;
+    font-family:var(--kai); font-size:15px; letter-spacing:2px; color:var(--ink);
+    background:rgba(255,253,246,.85);
+    border:1.5px solid rgba(90,66,50,.35);
+    border-radius:4px 14px 4px 14px; padding:6px 12px; user-select:none;
+  }
+  [data-time="night"] #dateChip{ color:#F2E9D8; background:rgba(46,53,80,.55); border-color:rgba(242,233,216,.4); }
+
+  #hint{
+    position:fixed; bottom:26px; left:0; right:0; z-index:20; text-align:center; pointer-events:none;
+    font-family:var(--kai); font-size:15px; letter-spacing:4px; color:var(--ink-soft);
+    opacity:0; transition:opacity 1.2s;
+  }
+  [data-time="night"] #hint{ color:#D8D2C2; }
+
+  #devBtn{
+    position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); right:14px; z-index:20;
+    width:34px; height:34px; border-radius:50%; border:1.5px solid rgba(90,66,50,.3);
+    background:rgba(255,253,246,.7); color:var(--ink-soft);
+    font-size:16px; line-height:30px; text-align:center; cursor:pointer; opacity:.65; padding:0;
+  }
+
+  /* ---------- 纸质抽屉 ---------- */
+  #veil{ position:fixed; inset:0; background:rgba(58,44,30,.35); z-index:30; opacity:0; pointer-events:none; transition:opacity .35s; }
+  #veil.on{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:fixed; left:50%; bottom:0; transform:translate(-50%,105%); z-index:31;
+    width:min(560px,100%); max-height:86vh; max-height:86dvh; overflow-y:auto; overscroll-behavior:contain;
+    background:var(--paper); color:var(--ink);
+    border-radius:26px 26px 0 0; padding:18px 20px calc(24px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 40px rgba(58,44,30,.25);
+    transition:transform .42s cubic-bezier(.32,.9,.35,1.02);
+  }
+  .sheet.on{ transform:translate(-50%,0); }
+  .sheet h2{ font-family:var(--kai); font-weight:600; font-size:22px; letter-spacing:3px; margin:2px 0 4px; }
+  .sheet .mut{ font-size:13px; color:var(--ink-soft); line-height:1.8; margin:0 0 14px; }
+  .grab{ width:44px; height:5px; border-radius:3px; background:#E4D8C4; margin:0 auto 14px; }
+
+  .btn{
+    display:inline-block; border:2px solid var(--ink); background:var(--paper); color:var(--ink);
+    font-family:var(--kai); font-size:16px; letter-spacing:2px;
+    border-radius:999px; padding:10px 22px; cursor:pointer; user-select:none;
+  }
+  .btn.fill{ background:var(--ink); color:#FFF6E6; }
+  .btn.small{ font-size:14px; padding:7px 16px; border-width:1.5px; }
+  .btn:active{ transform:scale(.97); }
+  .btn[disabled]{ opacity:.35; pointer-events:none; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  textarea,input[type=text]{
+    width:100%; border:none; border-bottom:2px dashed #D9C9AE; background:transparent;
+    font-family:var(--kai); font-size:17px; color:var(--ink); padding:8px 2px; outline:none; resize:none;
+  }
+  ::placeholder{ color:#C9B79A; }
+
+  /* ---------- 花房:照片墙 ---------- */
+  .wallWrap{ background:var(--paper-warm); border-radius:16px; padding:6px 10px 16px; }
+  .wire{ position:relative; height:2px; background:#B9A488; border-radius:2px; margin:34px 6px 8px; }
+  .wire::before,.wire::after{ content:""; position:absolute; top:-4px; width:9px; height:9px; border-radius:50%; background:#B9A488; }
+  .wire::before{ left:-3px; } .wire::after{ right:-3px; }
+  .cardsRow{ display:flex; gap:12px; padding:0 4px 4px; margin-top:-8px; overflow-x:auto; min-height:118px; }
+  .pcard{ position:relative; flex:0 0 auto; margin-top:-4px; transform-origin:top center; cursor:pointer; }
+  .pcard .clip{ position:absolute; top:-12px; left:50%; transform:translateX(-50%); width:12px; height:20px;
+                background:#C68A5B; border-radius:4px 4px 2px 2px; box-shadow:0 1px 0 rgba(0,0,0,.15); }
+  .pcard.polaroid{ background:#FFFEFA; padding:6px 6px 20px; border:1px solid #E7DCC8;
+                   box-shadow:0 3px 8px rgba(90,66,50,.18); border-radius:3px; }
+  .pcard.film{ background:#3B3630; padding:12px 5px; border-radius:3px; box-shadow:0 3px 8px rgba(30,25,20,.35); }
+  .pcard.film::before,.pcard.film::after{
+    content:""; position:absolute; left:5px; right:5px; height:6px;
+    background-image:radial-gradient(circle at 4px 3px,#FFF9EA 2.1px,transparent 2.6px);
+    background-size:11px 6px; background-position:0 0;
+  }
+  .pcard.film::before{ top:3px; } .pcard.film::after{ bottom:3px; }
+  .pcard img{ display:block; width:88px; height:88px; object-fit:cover; filter:saturate(.92) contrast(.98) sepia(.08); border-radius:2px; }
+  .pcard .cap{ position:absolute; bottom:3px; left:6px; right:6px; font-family:var(--kai); font-size:10px;
+               white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#6B5847; text-align:center; }
+  .seal{ position:absolute; right:-6px; bottom:10px; width:22px; height:22px; border-radius:50%;
+         background:radial-gradient(circle at 35% 35%, #E89A8B, #C05B4D 70%); box-shadow:0 1px 3px rgba(120,40,30,.4);
+         display:flex; align-items:center; justify-content:center; color:#FFF0E0; font-size:11px; font-family:var(--kai); }
+  .emptyWall{ text-align:center; font-family:var(--kai); color:#B7A489; letter-spacing:2px; font-size:14px; padding:26px 0 10px; }
+
+  /* 照片详情:翻面 */
+  .flipBox{ perspective:1200px; width:min(320px,78vw); margin:8px auto; }
+  .flipInner{ position:relative; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.4,.1,.2,1); }
+  .flipBox.flipped .flipInner{ transform:rotateY(180deg); }
+  .face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .face.front{ position:relative; }
+  .face.front.polaroid{ background:#FFFEFA; padding:12px 12px 46px; border:1px solid #E7DCC8; box-shadow:0 6px 18px rgba(90,66,50,.2); border-radius:4px; }
+  .face.front.film{ background:#3B3630; padding:26px 10px; border-radius:4px; }
+  .face.front img{ display:block; width:100%; aspect-ratio:1; object-fit:cover; filter:saturate(.92) contrast(.98) sepia(.08); }
+  .face.front .stamp{ position:absolute; bottom:12px; left:14px; right:14px; display:flex; justify-content:space-between;
+                      font-family:var(--kai); font-size:14px; color:#6B5847; }
+  .face.front.film .stamp{ color:#D8CBB5; bottom:4px; }
+  .face.back{ position:absolute; inset:0; transform:rotateY(180deg); background:#FBF3E2; border:1px solid #E7DCC8;
+              border-radius:4px; padding:18px; display:flex; flex-direction:column; }
+  .backNote{ flex:1; font-family:var(--kai); font-size:16px; line-height:2; color:#5A4232; white-space:pre-wrap;
+             filter:blur(6px); transition:filter .35s; overflow-y:auto; }
+  .backNote.show{ filter:none; }
+  #backEdit{ flex:1; border:none; font-size:16px; line-height:2; }
+  .backHint{ text-align:center; font-size:12px; color:#B7A489; letter-spacing:2px; margin-top:8px; font-family:var(--kai); }
+
+  /* ---------- 种子与心情 ---------- */
+  .packRow{ display:flex; gap:12px; overflow-x:auto; padding:4px 2px 8px; }
+  .pack{ flex:0 0 auto; width:86px; text-align:center; border:2px solid #E2D3B8; border-radius:10px 10px 14px 14px;
+         background:var(--paper-warm); padding:10px 6px 8px; cursor:pointer; }
+  .pack.sel{ border-color:var(--ink); box-shadow:0 2px 0 var(--ink); }
+  .pack svg{ width:44px; height:44px; }
+  .pack .nm{ font-family:var(--kai); font-size:14px; letter-spacing:1px; }
+  .pack .ct{ font-size:11px; color:var(--ink-soft); }
+  .moodRow{ display:flex; gap:10px; padding:4px 0 6px; }
+  .mood{ flex:1; text-align:center; border:2px solid #E2D3B8; border-radius:14px; padding:8px 2px 6px; cursor:pointer; background:var(--paper-warm); }
+  .mood.sel{ border-color:var(--ink); background:#FFF2D9; }
+  .mood svg{ width:34px; height:34px; }
+  .mood .nm{ font-family:var(--kai); font-size:12px; letter-spacing:1px; }
+
+  /* ---------- 信 ---------- */
+  .letter{ background:#FFFAF0; border:1px solid #E7D9BE; border-radius:6px; padding:26px 22px;
+           font-family:var(--kai); font-size:17px; line-height:2.3; letter-spacing:1px; color:#54432F;
+           box-shadow:0 4px 16px rgba(90,66,50,.12); }
+  .letter .from{ text-align:right; margin-top:14px; color:#9A8568; font-size:14px; }
+
+  .toast{ position:fixed; top:calc(18px + env(safe-area-inset-top)); left:50%; transform:translate(-50%,-260%);
+          z-index:40; background:var(--ink); color:#FFF6E6; font-family:var(--kai); letter-spacing:2px;
+          font-size:14px; padding:9px 18px; border-radius:999px; transition:transform .4s; white-space:nowrap; }
+  .toast.on{ transform:translate(-50%,0); }
+
+  .hidden{ display:none !important; }
+  @media (prefers-reduced-motion:reduce){
+    .cloud,#swingG,.ff{ animation:none !important; }
+  }
+</style>
+
+<div id="skyLayer">
+  <svg id="skySvg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMax slice" width="100%" height="100%">
+    <g id="sunG"><circle cx="520" cy="170" r="52" fill="var(--sun)" opacity=".95"/>
+      <circle cx="520" cy="170" r="70" fill="var(--sun)" opacity=".25"/></g>
+    <g id="moonG" class="hidden">
+      <circle cx="540" cy="160" r="44" fill="#F6E7B2"/><circle cx="524" cy="150" r="40" fill="var(--sky-hi)"/>
+      <g fill="#F2E9D8"><circle cx="420" cy="120" r="2.2"/><circle cx="500" cy="260" r="1.6"/><circle cx="680" cy="90" r="2"/>
+        <circle cx="760" cy="200" r="1.7"/><circle cx="640" cy="300" r="1.5"/><circle cx="440" cy="330" r="1.8"/>
+        <circle cx="720" cy="380" r="1.4"/><circle cx="580" cy="60" r="1.8"/></g>
+    </g>
+    <g class="cloud" id="cloud1" opacity=".9">
+      <g fill="#FFFDF6"><ellipse cx="0" cy="0" rx="58" ry="24"/><ellipse cx="42" cy="-12" rx="40" ry="20"/><ellipse cx="-40" cy="-8" rx="34" ry="17"/></g>
+    </g>
+    <g class="cloud" id="cloud2" opacity=".75">
+      <g fill="#FFFDF6"><ellipse cx="0" cy="0" rx="58" ry="24"/><ellipse cx="42" cy="-12" rx="40" ry="20"/><ellipse cx="-40" cy="-8" rx="34" ry="17"/></g>
+    </g>
+  </svg>
+</div>
+<div id="hillLayer">
+  <svg id="hillSvg" viewBox="0 0 3400 1000" preserveAspectRatio="xMinYMax slice" height="100%">
+    <path d="M0,760 Q300,600 640,700 T1300,690 T2000,710 T2700,680 T3400,720 L3400,1000 L0,1000 Z" fill="var(--hill-far)"/>
+    <path d="M0,820 Q380,700 800,780 T1600,790 T2400,760 T3400,800 L3400,1000 L0,1000 Z" fill="var(--hill-near)"/>
+    <g fill="var(--pine)" opacity=".8">
+      <path d="M520,712 l16,-38 16,38 z"/><path d="M560,716 l13,-30 13,30 z"/>
+      <path d="M1720,742 l15,-36 15,36 z"/><path d="M2560,722 l16,-38 16,38 z"/><path d="M2600,728 l12,-27 12,27 z"/>
+    </g>
+  </svg>
+</div>
+
+<div id="world">
+  <svg id="scene" viewBox="0 0 2600 1000" preserveAspectRatio="xMinYMax meet">
+    <defs>
+      <g id="picket"><rect x="0" y="0" width="12" height="66" rx="6" fill="#E9DCC2" stroke="var(--ink)" stroke-width="2.5"/></g>
+      <g id="flw-cosmos">
+        <g stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round">
+          <line x1="0" y1="0" x2="0" y2="-34"/><path d="M0,-16 q-12,-4 -16,-12" fill="none"/>
+        </g>
+        <g fill="#EFA8B8" stroke="var(--ink)" stroke-width="2">
+          <ellipse cx="0" cy="-46" rx="7" ry="11"/>
+          <ellipse cx="0" cy="-46" rx="7" ry="11" transform="rotate(72 0 -34)"/>
+          <ellipse cx="0" cy="-46" rx="7" ry="11" transform="rotate(144 0 -34)"/>
+          <ellipse cx="0" cy="-46" rx="7" ry="11" transform="rotate(216 0 -34)"/>
+          <ellipse cx="0" cy="-46" rx="7" ry="11" transform="rotate(288 0 -34)"/>
+        </g>
+        <circle cx="0" cy="-34" r="6" fill="#FFD98A" stroke="var(--ink)" stroke-width="2"/>
+      </g>
+      <g id="flw-sun">
+        <line x1="0" y1="0" x2="0" y2="-40" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>
+        <g fill="#FFC95E" stroke="var(--ink)" stroke-width="2">
+          <ellipse cx="0" cy="-52" rx="6" ry="10"/><ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(45 0 -40)"/>
+          <ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(90 0 -40)"/><ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(135 0 -40)"/>
+          <ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(180 0 -40)"/><ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(225 0 -40)"/>
+          <ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(270 0 -40)"/><ellipse cx="0" cy="-52" rx="6" ry="10" transform="rotate(315 0 -40)"/>
+        </g>
+        <circle cx="0" cy="-40" r="8.5" fill="#8A5A3B" stroke="var(--ink)" stroke-width="2"/>
+      </g>
+      <g id="flw-glory">
+        <path d="M0,0 C-4,-14 -2,-26 0,-36" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M0,-36 q-11,-9 -8,-18 q9,-4 16,2 q7,7 4,16 q-6,5 -12,0 z" fill="#9FB6E4" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="1" cy="-44" r="3.4" fill="#FFF3D9" stroke="var(--ink)" stroke-width="1.6"/>
+      </g>
+      <g id="sprout">
+        <line x1="0" y1="0" x2="0" y2="-14" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M0,-14 q-10,-2 -12,-12 q10,-2 12,12" fill="#8FBF7E" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M0,-14 q10,-2 12,-12 q-10,-2 -12,12" fill="#8FBF7E" stroke="var(--ink)" stroke-width="2"/>
+      </g>
+      <g id="bud">
+        <line x1="0" y1="0" x2="0" y2="-26" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M0,-26 q-8,-2 -10,-10" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <ellipse cx="0" cy="-34" rx="6.5" ry="9" fill="#B8CFA2" stroke="var(--ink)" stroke-width="2"/>
+      </g>
+      <g id="wildflower">
+        <line x1="0" y1="0" x2="0" y2="-20" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="0" cy="-25" r="5.5" fill="#F3E4B2" stroke="var(--ink)" stroke-width="1.8"/>
+      </g>
+    </defs>
+
+    <!-- 草地 -->
+    <path d="M0,772 Q400,752 900,768 T1800,764 T2600,770 L2600,1000 L0,1000 Z" fill="var(--grass)"/>
+    <path d="M0,840 Q500,820 1200,838 T2600,834 L2600,1000 L0,1000 Z" fill="var(--grass-deep)" opacity=".55"/>
+    <g stroke="var(--pine)" stroke-width="2.4" stroke-linecap="round" opacity=".7">
+      <path d="M420,790 l0,-12 M428,790 l5,-10 M412,790 l-5,-10" fill="none"/>
+      <path d="M1350,800 l0,-12 M1358,800 l5,-10 M1342,800 l-5,-10" fill="none"/>
+      <path d="M2380,792 l0,-12 M2388,792 l5,-10 M2372,792 l-5,-10" fill="none"/>
+      <path d="M840,806 l0,-11 M848,806 l5,-9" fill="none"/>
+    </g>
+
+    <!-- 后排篱笆 -->
+    <g id="fence"></g>
+    <rect x="150" y="726" width="2290" height="7" rx="3.5" fill="#E9DCC2" stroke="var(--ink)" stroke-width="2"/>
+
+    <!-- 篱笆门 -->
+    <g id="gate">
+      <rect x="120" y="640" width="18" height="130" rx="9" fill="#E0CDA9" stroke="var(--ink)" stroke-width="3"/>
+      <rect x="255" y="640" width="18" height="130" rx="9" fill="#E0CDA9" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M129,648 Q196,600 264,648" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+      <g font-family="Kaiti SC,STKaiti,serif" font-size="26" fill="var(--ink)" text-anchor="middle">
+        <text x="197" y="622" letter-spacing="6">小 园</text>
+      </g>
+      <g id="gateDoor" transform-origin="140 705">
+        <rect x="142" y="672" width="14" height="96" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
+        <rect x="168" y="664" width="14" height="104" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
+        <rect x="194" y="660" width="14" height="108" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
+        <rect x="220" y="664" width="14" height="104" rx="7" fill="#EDE0C4" stroke="var(--ink)" stroke-width="2.6"/>
+        <rect x="138" y="700" width="102" height="8" rx="4" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.2"/>
+      </g>
+    </g>
+
+    <!-- 邮筒 -->
+    <g id="mailbox" class="tappable">
+      <rect x="333" y="668" width="10" height="100" rx="5" fill="#8A6B4C" stroke="var(--ink)" stroke-width="2.6"/>
+      <rect x="300" y="618" width="78" height="52" rx="24" fill="var(--terra)" stroke="var(--ink)" stroke-width="3"/>
+      <rect x="356" y="634" width="16" height="20" rx="4" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.2"/>
+      <g id="mailFlag" transform-origin="306 622">
+        <line x1="306" y1="622" x2="306" y2="596" stroke="var(--ink)" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M306,596 h20 l-7,8 7,8 h-20 z" fill="#F3C34E" stroke="var(--ink)" stroke-width="2.2"/>
+      </g>
+      <rect x="290" y="590" width="100" height="180" fill="transparent"/>
+    </g>
+
+    <!-- 花坛 -->
+    <g id="bed" class="tappable">
+      <path d="M470,742 h330 q14,0 14,14 v22 q0,14 -14,14 h-330 q-14,0 -14,-14 v-22 q0,-14 14,-14 z"
+            fill="var(--soil)" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M486,760 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0 q30,-10 52,0" fill="none" stroke="var(--soil-deep)" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+      <g transform="translate(806,700)">
+        <line x1="14" y1="8" x2="14" y2="52" stroke="var(--ink)" stroke-width="3"/>
+        <rect x="-14" y="-14" width="58" height="30" rx="7" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.6"/>
+        <text x="15" y="7" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="17" fill="var(--ink)">花坛</text>
+      </g>
+      <rect x="456" y="640" width="400" height="156" fill="transparent"/>
+      <g id="plants"></g>
+    </g>
+
+    <!-- 花房 -->
+    <g id="greenhouse" class="tappable">
+      <path d="M880,566 L1070,470 L1260,566 Z" fill="var(--glass)" opacity=".85" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="892" y="566" width="356" height="202" fill="var(--glass)" opacity=".72" stroke="var(--ink)" stroke-width="3"/>
+      <g id="ghGlow" class="hidden"><rect x="894" y="568" width="352" height="198" fill="#FFD98A" opacity=".2"/></g>
+      <g stroke="var(--ink)" stroke-width="1.8" opacity=".5">
+        <line x1="963" y1="566" x2="963" y2="768"/><line x1="1034" y1="566" x2="1034" y2="768"/>
+        <line x1="1105" y1="566" x2="1105" y2="768"/><line x1="1176" y1="566" x2="1176" y2="768"/>
+        <line x1="892" y1="633" x2="1248" y2="633"/><line x1="892" y1="700" x2="1248" y2="700"/>
+        <line x1="1070" y1="470" x2="1070" y2="566"/><line x1="975" y1="518" x2="1165" y2="518"/>
+      </g>
+      <rect x="1046" y="640" width="52" height="128" rx="6" fill="#EAD9BC" stroke="var(--ink)" stroke-width="3"/>
+      <circle cx="1088" cy="706" r="3.4" fill="var(--ink)"/>
+      <g transform="translate(1070,452)">
+        <rect x="-44" y="-26" width="88" height="34" rx="9" fill="#FFF3D9" stroke="var(--ink)" stroke-width="2.6"/>
+        <text x="0" y="-1" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="19" fill="var(--ink)" letter-spacing="3">花房</text>
+      </g>
+      <use href="#wildflower" transform="translate(1226,766)"/>
+    </g>
+
+    <!-- 大树与秋千 -->
+    <g id="treeG">
+      <path d="M1568,772 C1560,700 1572,650 1560,560 C1600,570 1610,640 1604,700 C1600,740 1596,758 1596,772 Z"
+            fill="#8A6B4C" stroke="var(--ink)" stroke-width="3"/>
+      <g fill="var(--grass-deep)" stroke="var(--ink)" stroke-width="3">
+        <ellipse cx="1500" cy="520" rx="95" ry="72"/>
+        <ellipse cx="1622" cy="488" rx="110" ry="82"/>
+        <ellipse cx="1560" cy="430" rx="88" ry="66"/>
+        <ellipse cx="1700" cy="540" rx="72" ry="55"/>
+      </g>
+      <path d="M1470,540 q30,18 60,10 M1600,470 q26,16 56,8" stroke="var(--ink)" stroke-width="2.2" fill="none" opacity=".45"/>
+      <g id="swing" class="tappable">
+        <g id="swingG" transform-origin="1690 560">
+          <line x1="1664" y1="560" x2="1664" y2="700" stroke="var(--ink)" stroke-width="2.6"/>
+          <line x1="1716" y1="560" x2="1716" y2="700" stroke="var(--ink)" stroke-width="2.6"/>
+          <rect x="1648" y="698" width="84" height="12" rx="6" fill="#E0CDA9" stroke="var(--ink)" stroke-width="2.6"/>
+        </g>
+        <rect x="1630" y="560" width="120" height="170" fill="transparent"/>
+      </g>
+    </g>
+
+    <!-- 小屋 + 花田 -->
+    <g id="cottage" class="tappable">
+      <rect x="1910" y="580" width="300" height="190" rx="10" fill="#FBF0DA" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M1886,588 L2060,462 L2234,588 Z" fill="var(--terra)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="2150" y="470" width="26" height="60" rx="5" fill="#C97C5E" stroke="var(--ink)" stroke-width="2.6"/>
+      <rect x="1946" y="642" width="64" height="128" rx="8" fill="#8A6B4C" stroke="var(--ink)" stroke-width="3"/>
+      <circle cx="1998" cy="708" r="3.6" fill="#FFF3D9"/>
+      <circle id="winGlow" cx="2120" cy="650" r="30" fill="#FFD98A" opacity="0"/>
+      <circle cx="2120" cy="650" r="34" fill="#DFF0EA" fill-opacity=".55" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M2086,650 h68 M2120,616 v68" stroke="var(--ink)" stroke-width="2.2" opacity=".6"/>
+      <g id="doorNote" class="hidden" transform="translate(1978,660) rotate(-4)">
+        <rect x="-32" y="-22" width="64" height="46" rx="4" fill="#FFF9EA" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="0" cy="-16" r="2.6" fill="var(--terra)"/>
+        <text x="1" y="0" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="11" fill="var(--ink)">有人要</text>
+        <text x="1" y="15" text-anchor="middle" font-family="Kaiti SC,STKaiti,serif" font-size="11" fill="var(--ink)">搬进来了</text>
+      </g>
+    </g>
+    <g id="meadow" opacity=".95">
+      <use href="#wildflower" transform="translate(2280,760)"/>
+      <use href="#wildflower" transform="translate(2320,780) scale(.85)"/>
+      <use href="#wildflower" transform="translate(2362,764) scale(1.1)"/>
+      <use href="#wildflower" transform="translate(2410,782) scale(.8)"/>
+    </g>
+
+    <!-- 小溪 -->
+    <g id="stream">
+      <path d="M2470,748 C2510,800 2500,880 2560,1000 L2600,1000 L2600,720 C2560,724 2520,730 2470,748 Z"
+            fill="#BFDCE8" stroke="var(--ink)" stroke-width="3"/>
+      <g stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" opacity=".7">
+        <path d="M2520,790 q12,6 24,0" fill="none"/><path d="M2536,850 q12,6 24,0" fill="none"/>
+        <path d="M2548,920 q12,6 24,0" fill="none"/>
+      </g>
+      <ellipse cx="2472" cy="768" rx="16" ry="10" fill="#D8CBB5" stroke="var(--ink)" stroke-width="2.4"/>
+      <ellipse cx="2500" cy="742" rx="12" ry="8" fill="#CBBBA2" stroke="var(--ink)" stroke-width="2.4"/>
+    </g>
+
+    <g id="fireflies" class="hidden">
+      <circle class="ff" cx="700" cy="640" r="3.2"/><circle class="ff" cx="1480" cy="600" r="2.6"/>
+      <circle class="ff" cx="1620" cy="660" r="3"/><circle class="ff" cx="980" cy="620" r="2.4"/>
+      <circle class="ff" cx="2280" cy="640" r="3"/><circle class="ff" cx="560" cy="600" r="2.2"/>
+    </g>
+  </svg>
+</div>
+
+<div id="dateChip">…</div>
+<div id="hint">往右边走走 →</div>
+<button id="devBtn">⋯</button>
+<div id="veil"></div>
+<div class="toast" id="toast"></div>
+
+<!-- 花房抽屉 -->
+<div class="sheet" id="shGreenhouse">
+  <div class="grab"></div>
+  <h2>花房</h2>
+  <p class="mut">照片晾在这里。只有你会看到。</p>
+  <div class="wallWrap" id="wall"></div>
+  <div class="row" style="margin-top:16px; justify-content:space-between;">
+    <button class="btn fill" id="btnNewPhoto">晾一张新照片</button>
+    <button class="btn small" data-close>先出去</button>
+  </div>
+  <input type="file" id="filePick" accept="image/*" class="hidden">
+</div>
+
+<!-- 晾照片流程 -->
+<div class="sheet" id="shNewPhoto">
+  <div class="grab"></div>
+  <h2>晾一张</h2>
+  <div id="npPreviewWrap" style="text-align:center; margin:8px 0;"></div>
+  <p class="mut" style="margin-bottom:6px;">选一种纸:</p>
+  <div class="row" id="paperRow">
+    <button class="btn small sel" data-paper="polaroid">拍立得</button>
+    <button class="btn small" data-paper="film">胶片</button>
+  </div>
+  <div style="margin-top:14px;">
+    <input type="text" id="npCaption" maxlength="30" placeholder="写一行字,也可以不写">
+  </div>
+  <div class="row" style="margin-top:18px; justify-content:space-between;">
+    <button class="btn fill" id="btnHang">夹上绳</button>
+    <button class="btn small" data-close>算了</button>
+  </div>
+</div>
+
+<!-- 照片详情 -->
+<div class="sheet" id="shPhoto">
+  <div class="grab"></div>
+  <div class="flipBox" id="flipBox"><div class="flipInner" id="flipInner"></div></div>
+  <div class="row" style="justify-content:center; gap:14px; margin-top:10px;">
+    <button class="btn small" id="btnFlip">翻到背面</button>
+    <button class="btn small" id="btnSeal">按一枚蜡封</button>
+  </div>
+  <div class="row" style="justify-content:space-between; margin-top:16px;">
+    <button class="btn small" id="btnUnpin" style="border-style:dashed; opacity:.7;">取下这张</button>
+    <button class="btn small" data-close>好了</button>
+  </div>
+</div>
+
+<!-- 花坛抽屉 -->
+<div class="sheet" id="shBed">
+  <div class="grab"></div>
+  <h2>种一颗种子</h2>
+  <p class="mut">把今天种进土里。开什么样,随它。</p>
+  <p class="mut" style="margin-bottom:4px;">种子盒:</p>
+  <div class="packRow" id="packRow"></div>
+  <p class="mut" style="margin:10px 0 4px;">今天的天气(你心里的):</p>
+  <div class="moodRow" id="moodRow"></div>
+  <div style="margin-top:10px;">
+    <input type="text" id="seedLine" maxlength="40" placeholder="一句话,也可以不说">
+  </div>
+  <div class="row" style="margin-top:18px; justify-content:space-between;">
+    <button class="btn fill" id="btnPlant">种下去</button>
+    <button class="btn small" data-close>先出去</button>
+  </div>
+</div>
+
+<!-- 花的展签 -->
+<div class="sheet" id="shFlower">
+  <div class="grab"></div>
+  <div class="letter" id="flowerTag"></div>
+  <div class="row" style="justify-content:center; margin-top:16px;">
+    <button class="btn small" data-close>好</button>
+  </div>
+</div>
+
+<!-- 邮筒 -->
+<div class="sheet" id="shMail">
+  <div class="grab"></div>
+  <h2>邮筒</h2>
+  <div id="mailBody"></div>
+  <div class="row" style="justify-content:center; margin-top:16px;">
+    <button class="btn small" data-close>收好了</button>
+  </div>
+</div>
+
+<!-- 园丁小抽屉(演示用) -->
+<div class="sheet" id="shDev">
+  <div class="grab"></div>
+  <h2>园丁小抽屉</h2>
+  <p class="mut">这一格是做原型演示用的,正式版不会有。<br>所有数据只存在这台设备上,没有服务器。</p>
+  <div class="row">
+    <button class="btn small" id="btnSkipDay">快进一天(看花开)</button>
+    <button class="btn small" id="btnReset" style="border-style:dashed;">清空整个园子</button>
+  </div>
+  <div class="row" style="justify-content:flex-end; margin-top:14px;">
+    <button class="btn small" data-close>关上</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var DAY = 86400000;
+  var LS = "xiaoyuan.v01";
+
+  /* ---------------- 状态 ---------------- */
+  var S = load();
+  function load(){
+    try{ var s = JSON.parse(localStorage.getItem(LS)); if(s&&s.photos) return s; }catch(e){}
+    return { photos:[], plants:[], seeds:{}, mailOpened:false, skew:0 };
+  }
+  function save(){
+    try{ localStorage.setItem(LS, JSON.stringify(S)); }
+    catch(e){ toast("装不下了——原型先只能存这么多"); }
+  }
+  function now(){ return Date.now() + (S.skew||0); }
+
+  /* ---------------- 节气与日期章 ---------------- */
+  var TERMS = [[1,5,"小寒"],[1,20,"大寒"],[2,4,"立春"],[2,19,"雨水"],[3,5,"惊蛰"],[3,20,"春分"],
+    [4,5,"清明"],[4,20,"谷雨"],[5,5,"立夏"],[5,21,"小满"],[6,6,"芒种"],[6,21,"夏至"],
+    [7,7,"小暑"],[7,23,"大暑"],[8,7,"立秋"],[8,23,"处暑"],[9,7,"白露"],[9,23,"秋分"],
+    [10,8,"寒露"],[10,23,"霜降"],[11,7,"立冬"],[11,22,"小雪"],[12,7,"大雪"],[12,22,"冬至"]];
+  function term(d){
+    var m=d.getMonth()+1, day=d.getDate(), t="冬至";
+    for(var i=0;i<TERMS.length;i++){ var x=TERMS[i];
+      if(m>x[0] || (m===x[0]&&day>=x[1])) t=x[2]; }
+    return t;
+  }
+  function stampText(ts){
+    var d=new Date(ts); return (d.getMonth()+1)+"月"+d.getDate()+"日";
+  }
+  function refreshChip(){
+    var d=new Date();
+    document.getElementById("dateChip").textContent = stampText(d.getTime())+" · "+term(d);
+  }
+
+  /* ---------------- 昼夜 ---------------- */
+  function timeOfDay(){
+    var h=new Date().getHours()+new Date().getMinutes()/60;
+    if(h>=5&&h<7) return "dawn";
+    if(h>=7&&h<17.5) return "day";
+    if(h>=17.5&&h<19.5) return "dusk";
+    return "night";
+  }
+  function applyTime(){
+    var t=timeOfDay();
+    document.documentElement.setAttribute("data-time",t);
+    var night=(t==="night");
+    document.getElementById("moonG").classList.toggle("hidden",!night);
+    document.getElementById("sunG").classList.toggle("hidden",night);
+    document.getElementById("fireflies").classList.toggle("hidden",!night);
+    document.getElementById("winGlow").setAttribute("opacity", night?".8":"0");
+    document.getElementById("ghGlow").classList.toggle("hidden",!night);
+  }
+
+  /* ---------------- 篱笆与开门 ---------------- */
+  (function fence(){
+    var g=document.getElementById("fence"), x=290;
+    while(x<2440){
+      var u=document.createElementNS("http://www.w3.org/2000/svg","use");
+      u.setAttribute("href","#picket"); u.setAttribute("x",x); u.setAttribute("y",690); g.appendChild(u);
+      x+=44;
+    }
+  })();
+  window.addEventListener("load",function(){
+    var door=document.getElementById("gateDoor");
+    door.style.transition="transform 1.4s cubic-bezier(.5,.05,.3,1), opacity 1.4s";
+    setTimeout(function(){ door.style.transform="scaleX(0.14) rotate(-3deg)"; door.style.opacity=".85"; },500);
+    var hint=document.getElementById("hint");
+    setTimeout(function(){ hint.style.opacity=1; },1800);
+    var world=document.getElementById("world");
+    var off=function(){ hint.style.opacity=0; world.removeEventListener("scroll",off); };
+    world.addEventListener("scroll",off);
+  });
+
+  /* ---------------- 视差 ---------------- */
+  var world=document.getElementById("world"), hillSvg=document.getElementById("hillSvg");
+  world.addEventListener("scroll",function(){
+    requestAnimationFrame(function(){
+      hillSvg.style.transform="translateX("+(-world.scrollLeft*0.3)+"px)";
+    });
+  },{passive:true});
+
+  /* ---------------- 云 / 萤火 / 秋千 动画 ---------------- */
+  var style=document.createElement("style");
+  style.textContent =
+    "#cloud1{animation:drift1 150s linear infinite}"+
+    "#cloud2{animation:drift2 210s linear infinite}"+
+    "@keyframes drift1{from{transform:translate(-140px,120px)}to{transform:translate(1340px,120px)}}"+
+    "@keyframes drift2{from{transform:translate(1340px,260px) scale(.7)}to{transform:translate(-200px,260px) scale(.7)}}"+
+    ".ff{fill:#FFE9A0;animation:ff 4.2s ease-in-out infinite}"+
+    ".ff:nth-child(2){animation-delay:1.1s}.ff:nth-child(3){animation-delay:2s}"+
+    ".ff:nth-child(4){animation-delay:.6s}.ff:nth-child(5){animation-delay:2.8s}.ff:nth-child(6){animation-delay:1.7s}"+
+    "@keyframes ff{0%,100%{opacity:0;transform:translateY(0)}40%{opacity:.95}60%{opacity:.5;transform:translateY(-14px)}80%{opacity:.9}}"+
+    "#swingG.play{animation:sw 3.4s ease-in-out infinite}"+
+    "@keyframes sw{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-5deg)}}";
+  document.head.appendChild(style);
+  document.getElementById("swing").addEventListener("click",function(){
+    document.getElementById("swingG").classList.toggle("play");
+  });
+
+  /* ---------------- 抽屉框架 ---------------- */
+  var veil=document.getElementById("veil"), openSheet=null;
+  function open(id){
+    close();
+    openSheet=document.getElementById(id);
+    veil.classList.add("on"); openSheet.classList.add("on");
+  }
+  function close(){
+    if(openSheet){ openSheet.classList.remove("on"); openSheet=null; }
+    veil.classList.remove("on");
+  }
+  veil.addEventListener("click",close);
+  document.querySelectorAll("[data-close]").forEach(function(b){ b.addEventListener("click",close); });
+  function toast(t){
+    var el=document.getElementById("toast"); el.textContent=t; el.classList.add("on");
+    clearTimeout(toast._t);
+    toast._t=setTimeout(function(){ el.classList.remove("on"); },2200);
+  }
+
+  /* ---------------- 邮筒 ---------------- */
+  var GIFT=[ {id:"cosmos",n:3}, {id:"sun",n:2}, {id:"glory",n:2} ];
+  var FLW={ cosmos:{name:"波斯菊",href:"#flw-cosmos"}, sun:{name:"向日葵",href:"#flw-sun"}, glory:{name:"牵牛花",href:"#flw-glory"} };
+  document.getElementById("mailbox").addEventListener("click",function(){
+    var body=document.getElementById("mailBody");
+    if(!S.mailOpened){
+      S.mailOpened=true;
+      GIFT.forEach(function(g){ S.seeds[g.id]=(S.seeds[g.id]||0)+g.n; });
+      save();
+      var flag=document.getElementById("mailFlag");
+      flag.style.transition="transform .6s"; flag.style.transform="rotate(78deg)";
+      body.innerHTML =
+        '<div class="letter">这里是你的园子。<br>花往哪儿种,都对。<br><br>随信附上今夏的种子:波斯菊三粒、向日葵两粒、牵牛花两粒。'+
+        '<div class="from">—— 小园 · '+term(new Date())+'</div></div>';
+    } else {
+      body.innerHTML =
+        '<div class="letter">暂时没有新的信。<br>下一个节气,会有种子寄到。'+
+        '<div class="from">—— 小园</div></div>';
+    }
+    open("shMail");
+  });
+
+  /* ---------------- 花坛:种子 ---------------- */
+  var MOODS=[
+    {id:"sunny", name:"晴",   icon:'<circle cx="17" cy="17" r="8" fill="#FFD98A" stroke="#5A4232" stroke-width="2"/><g stroke="#5A4232" stroke-width="2" stroke-linecap="round"><line x1="17" y1="2" x2="17" y2="6"/><line x1="17" y1="28" x2="17" y2="32"/><line x1="2" y1="17" x2="6" y2="17"/><line x1="28" y1="17" x2="32" y2="17"/><line x1="6.4" y1="6.4" x2="9.2" y2="9.2"/><line x1="24.8" y1="24.8" x2="27.6" y2="27.6"/><line x1="6.4" y1="27.6" x2="9.2" y2="24.8"/><line x1="24.8" y1="9.2" x2="27.6" y2="6.4"/></g>'},
+    {id:"cloudy",name:"多云", icon:'<circle cx="12" cy="13" r="6" fill="#FFD98A" stroke="#5A4232" stroke-width="2"/><g fill="#FFFDF6" stroke="#5A4232" stroke-width="2"><ellipse cx="19" cy="20" rx="10" ry="6.5"/><ellipse cx="11" cy="22" rx="7" ry="5"/></g>'},
+    {id:"rain",  name:"小雨", icon:'<g fill="#FFFDF6" stroke="#5A4232" stroke-width="2"><ellipse cx="17" cy="13" rx="11" ry="7"/></g><g stroke="#7FA8C9" stroke-width="2.4" stroke-linecap="round"><line x1="10" y1="24" x2="8" y2="29"/><line x1="17" y1="24" x2="15" y2="29"/><line x1="24" y1="24" x2="22" y2="29"/></g>'},
+    {id:"storm", name:"雷阵雨",icon:'<g fill="#D8D2C2" stroke="#5A4232" stroke-width="2"><ellipse cx="17" cy="12" rx="11" ry="7"/></g><path d="M16,20 l-4,7 h5 l-3,7 8,-9 h-5 l3,-5 z" fill="#F3C34E" stroke="#5A4232" stroke-width="1.6" stroke-linejoin="round"/>'}
+  ];
+  var pick={ seed:null, mood:null };
+  function renderPacks(){
+    var row=document.getElementById("packRow"); row.innerHTML="";
+    var any=false;
+    Object.keys(FLW).forEach(function(id){
+      var n=S.seeds[id]||0; if(n<=0) return; any=true;
+      var d=document.createElement("div");
+      d.className="pack"+(pick.seed===id?" sel":"");
+      d.innerHTML='<svg viewBox="-30 -60 60 62"><use href="'+FLW[id].href+'" transform="scale(.9)"/></svg>'+
+        '<div class="nm">'+FLW[id].name+'</div><div class="ct">还有 '+n+' 粒</div>';
+      d.addEventListener("click",function(){ pick.seed=id; renderPacks(); });
+      row.appendChild(d);
+    });
+    if(!any) row.innerHTML='<p class="mut">种子盒空了。去邮筒看看,或者等下一个节气。</p>';
+  }
+  function renderMoods(){
+    var row=document.getElementById("moodRow"); row.innerHTML="";
+    MOODS.forEach(function(m){
+      var d=document.createElement("div");
+      d.className="mood"+(pick.mood===m.id?" sel":"");
+      d.innerHTML='<svg viewBox="0 0 34 34">'+m.icon+'</svg><div class="nm">'+m.name+'</div>';
+      d.addEventListener("click",function(){ pick.mood=m.id; renderMoods(); });
+      row.appendChild(d);
+    });
+  }
+  document.getElementById("bed").addEventListener("click",function(){
+    pick={seed:null,mood:null};
+    document.getElementById("seedLine").value="";
+    renderPacks(); renderMoods();
+    open("shBed");
+  });
+  var SLOTS=[510,560,610,660,710,760];
+  document.getElementById("btnPlant").addEventListener("click",function(){
+    if(!pick.seed){ toast("先选一粒种子"); return; }
+    if(S.plants.length>=SLOTS.length){ toast("花坛满了——原型先种六棵"); return; }
+    S.seeds[pick.seed]--;
+    S.plants.push({ type:pick.seed, mood:pick.mood, line:document.getElementById("seedLine").value.trim(),
+                    at:now(), slot:S.plants.length });
+    save(); renderPlants(); close();
+    toast("种下去了。急不来的,慢慢等。");
+  });
+  function stage(p){
+    var d=(now()-p.at)/DAY;
+    if(d>=2) return 2; if(d>=1) return 1; return 0;
+  }
+  function renderPlants(){
+    var g=document.getElementById("plants"); g.innerHTML="";
+    S.plants.forEach(function(p){
+      var st=stage(p);
+      var href = st===0 ? "#sprout" : st===1 ? "#bud" : FLW[p.type].href;
+      var u=document.createElementNS("http://www.w3.org/2000/svg","g");
+      u.setAttribute("transform","translate("+SLOTS[p.slot]+",756)");
+      u.setAttribute("class","tappable");
+      u.innerHTML='<use href="'+href+'"/><rect x="-20" y="-70" width="40" height="80" fill="transparent"/>';
+      u.addEventListener("click",function(ev){
+        ev.stopPropagation();
+        var moodName="";
+        for(var i=0;i<MOODS.length;i++){ if(MOODS[i].id===p.mood) moodName=MOODS[i].name; }
+        var head= st===2 ? FLW[p.type].name : (st===1?"一个花苞":"一株小芽");
+        document.getElementById("flowerTag").innerHTML = head+"<br>"+
+          '<span style="font-size:14px;color:#9A8568">'+stampText(p.at)+(moodName?" · "+moodName:"")+"</span>"+
+          (p.line?('<br><br>「'+esc(p.line)+'」'):"")+
+          (st<2?'<br><br><span style="font-size:14px;color:#9A8568">还在长。花开的日子,由它自己定。</span>':"");
+        open("shFlower");
+      });
+      g.appendChild(u);
+    });
+  }
+
+  /* ---------------- 花房:照片 ---------------- */
+  var pending=null, pendingPaper="polaroid", currentPhoto=null, unpinArmed=false;
+  document.getElementById("greenhouse").addEventListener("click",function(){ renderWall(); open("shGreenhouse"); });
+  document.getElementById("btnNewPhoto").addEventListener("click",function(){ document.getElementById("filePick").click(); });
+  document.getElementById("filePick").addEventListener("change",function(ev){
+    var f=ev.target.files&&ev.target.files[0]; ev.target.value="";
+    if(!f) return;
+    var url=URL.createObjectURL(f);
+    var img=new Image();
+    img.onload=function(){
+      var side=Math.min(img.width,img.height), out=700;
+      var c=document.createElement("canvas"); c.width=out; c.height=out;
+      var x=(img.width-side)/2, y=(img.height-side)/2;
+      c.getContext("2d").drawImage(img,x,y,side,side,0,0,out,out);
+      pending=c.toDataURL("image/jpeg",.72);
+      pendingPaper="polaroid";
+      document.querySelectorAll("#paperRow .btn").forEach(function(b){ b.classList.toggle("sel",b.dataset.paper==="polaroid"); });
+      document.getElementById("npCaption").value="";
+      showPreview();
+      open("shNewPhoto");
+      URL.revokeObjectURL(url);
+    };
+    img.src=url;
+  });
+  function showPreview(){
+    document.getElementById("npPreviewWrap").innerHTML=
+      '<div class="pcard '+pendingPaper+'" style="display:inline-block;transform:rotate(-1.5deg)">'+
+      '<img src="'+pending+'" style="width:150px;height:150px;"></div>';
+  }
+  document.querySelectorAll("#paperRow .btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      pendingPaper=b.dataset.paper;
+      document.querySelectorAll("#paperRow .btn").forEach(function(x){ x.classList.toggle("sel",x===b); });
+      showPreview();
+    });
+  });
+  document.getElementById("btnHang").addEventListener("click",function(){
+    if(!pending) return;
+    S.photos.unshift({ img:pending, paper:pendingPaper, cap:document.getElementById("npCaption").value.trim(),
+                       back:"", sealed:false, at:now() });
+    pending=null; save(); renderWall(); open("shGreenhouse");
+    toast("嗒——夹好了。");
+  });
+  function renderWall(){
+    var w=document.getElementById("wall"); w.innerHTML="";
+    if(!S.photos.length){
+      w.innerHTML='<div class="wire"></div><div class="emptyWall">绳子还空着。第一张,晾什么都好。</div>';
+      return;
+    }
+    for(var r=0;r<Math.ceil(S.photos.length/3);r++){
+      var wire=document.createElement("div"); wire.className="wire"; w.appendChild(wire);
+      var row=document.createElement("div"); row.className="cardsRow";
+      /* eslint-disable no-loop-func */
+      S.photos.slice(r*3,r*3+3).forEach(function(p){
+        var idx=S.photos.indexOf(p);
+        var d=document.createElement("div");
+        d.className="pcard "+p.paper;
+        d.style.transform="rotate("+((idx%3-1)*2)+"deg)";
+        d.innerHTML='<div class="clip"></div><img src="'+p.img+'">'+
+          (p.paper==="polaroid"?'<div class="cap">'+esc(p.cap)+'</div>':"")+
+          (p.sealed?'<div class="seal">封</div>':"");
+        d.addEventListener("click",function(){ openPhoto(idx); });
+        row.appendChild(d);
+      });
+      w.appendChild(row);
+    }
+  }
+  function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+  function openPhoto(idx){
+    currentPhoto=idx; unpinArmed=false;
+    var p=S.photos[idx], inner=document.getElementById("flipInner");
+    document.getElementById("flipBox").classList.remove("flipped");
+    document.getElementById("btnFlip").textContent="翻到背面";
+    document.getElementById("btnUnpin").textContent="取下这张";
+    document.getElementById("btnSeal").textContent = p.sealed ? "揭掉蜡封" : "按一枚蜡封";
+    inner.innerHTML=
+      '<div class="face front '+p.paper+'"><img src="'+p.img+'">'+
+        '<div class="stamp"><span>'+esc(p.cap)+'</span><span>'+stampText(p.at)+'</span></div>'+
+        (p.sealed?'<div class="seal" style="right:8px;bottom:52px;">封</div>':"")+'</div>'+
+      '<div class="face back" id="backFace">'+
+        '<div class="backNote" id="backNote">'+(p.back?esc(p.back):'<span style="opacity:.5">背面还没有写字。</span>')+'</div>'+
+        '<textarea id="backEdit" rows="6" class="hidden" maxlength="200"></textarea>'+
+        '<div class="backHint" id="backHint">按住,才看得见</div>'+
+        '<div class="row" style="margin-top:10px;justify-content:center;gap:10px;">'+
+          '<button class="btn small" id="btnEditBack">在背面写字</button>'+
+          '<button class="btn small hidden" id="btnSaveBack">写好了</button>'+
+        '</div></div>';
+    var face=document.getElementById("backFace"), note=document.getElementById("backNote");
+    function hold(e){ if(e.target.closest("button,textarea")) return; note.classList.add("show"); }
+    function release(){ note.classList.remove("show"); }
+    face.addEventListener("pointerdown",hold);
+    face.addEventListener("pointerup",release);
+    face.addEventListener("pointerleave",release);
+    face.addEventListener("pointercancel",release);
+    document.getElementById("btnEditBack").addEventListener("click",function(){
+      note.classList.add("hidden");
+      var ed=document.getElementById("backEdit");
+      ed.classList.remove("hidden"); ed.value=p.back||""; ed.focus();
+      document.getElementById("backHint").textContent="写吧,只有你看得到";
+      this.classList.add("hidden");
+      document.getElementById("btnSaveBack").classList.remove("hidden");
+    });
+    document.getElementById("btnSaveBack").addEventListener("click",function(){
+      p.back=document.getElementById("backEdit").value.trim();
+      save(); openPhoto(idx);
+      document.getElementById("flipBox").classList.add("flipped");
+      document.getElementById("btnFlip").textContent="翻回正面";
+    });
+    open("shPhoto");
+  }
+  document.getElementById("btnFlip").addEventListener("click",function(){
+    var b=document.getElementById("flipBox");
+    b.classList.toggle("flipped");
+    this.textContent = b.classList.contains("flipped") ? "翻回正面" : "翻到背面";
+  });
+  document.getElementById("btnSeal").addEventListener("click",function(){
+    if(currentPhoto===null) return;
+    var p=S.photos[currentPhoto]; p.sealed=!p.sealed; save(); openPhoto(currentPhoto);
+    if(p.sealed) toast("这一张,封起来了。");
+  });
+  document.getElementById("btnUnpin").addEventListener("click",function(){
+    if(currentPhoto===null) return;
+    if(!unpinArmed){
+      unpinArmed=true; this.textContent="取下就找不回来了——真的取下?";
+      var self=this;
+      setTimeout(function(){ unpinArmed=false; self.textContent="取下这张"; },3500);
+      return;
+    }
+    S.photos.splice(currentPhoto,1); currentPhoto=null;
+    save(); renderWall(); open("shGreenhouse");
+  });
+
+  /* ---------------- 小屋 ---------------- */
+  document.getElementById("cottage").addEventListener("click",function(){
+    var n=document.getElementById("doorNote");
+    n.classList.remove("hidden");
+    clearTimeout(n._t);
+    n._t=setTimeout(function(){ n.classList.add("hidden"); },2600);
+  });
+
+  /* ---------------- 园丁小抽屉 ---------------- */
+  var resetArmed=false;
+  document.getElementById("devBtn").addEventListener("click",function(){
+    resetArmed=false; document.getElementById("btnReset").textContent="清空整个园子";
+    open("shDev");
+  });
+  document.getElementById("btnSkipDay").addEventListener("click",function(){
+    S.skew=(S.skew||0)+DAY; save(); renderPlants(); toast("过了一天。");
+  });
+  document.getElementById("btnReset").addEventListener("click",function(){
+    if(!resetArmed){
+      resetArmed=true; this.textContent="照片和花都会没有——真的清空?";
+      var self=this;
+      setTimeout(function(){ resetArmed=false; self.textContent="清空整个园子"; },3500);
+      return;
+    }
+    localStorage.removeItem(LS); location.reload();
+  });
+
+  /* ---------------- 启动 ---------------- */
+  refreshChip(); applyTime(); renderPlants();
+  setInterval(applyTime, 60000); setInterval(refreshChip, 60000);
+})();
+</script>
+
+</body>
+</html>
