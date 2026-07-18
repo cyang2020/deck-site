@@ -29,7 +29,9 @@ const pw = loadPlaywright();
 if (!pw) { console.error("找不到 playwright-core:先在当前目录 npm i playwright-core"); process.exit(1); }
 
 const files = readdirSync(DIR).filter(f =>
-  f.endsWith(".png") && !f.endsWith(".orig.png") && f !== "style-key.png" && (!ONLY || f.includes(ONLY)));
+  f.endsWith(".png") && !f.endsWith(".orig.png") && f !== "style-key.png" &&
+  !f.startsWith("bg-") && !f.startsWith("room-") &&   // 整景图,绝不抠
+  (!ONLY || f.includes(ONLY)));
 if (!files.length) { console.log("没有要处理的 PNG。"); process.exit(0); }
 
 (async () => {
